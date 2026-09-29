@@ -50,9 +50,13 @@ def create_entry(payload: EntryPayload) -> ActionResult:
 
 @router.post("/{entry_id}/actions", response_model=ActionResult)
 def run_action(entry_id: int, payload: EntryPayload) -> ActionResult:
-    """对单条试验记录执行安排试验、登记合格、登记缺陷；不允许的动作会被拦下并说明原因。"""
+    """对单条试验记录执行安排试验（提交）、登记合格、登记缺陷。
+
+    三个动作的合格/缺陷判定共用同一份口径（见 services.testrecord_rules），
+    入口字段仍通过既有 payload.values 提交，接口参数不变。
+    """
     action = str(payload.values.get("action") or "").strip()
-    entry, message = service.run_action(entry_id, action)
+    entry, message = service.run_action(entry_id, action, payload.values)
     if entry is None:
         return ActionResult(ok=False, message=message)
     return ActionResult(ok=True, message=message, entry=entry)
